@@ -58,6 +58,20 @@ exports.Stripe = {
             }
         });
     }); },
+    disconnect: function (stripeUserId) { return __awaiter(void 0, void 0, void 0, function () {
+        var response;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, client.oauth.deauthorize({
+                        client_id: "" + process.env.S_CLIENT_ID,
+                        stripe_user_id: stripeUserId
+                    })];
+                case 1:
+                    response = _a.sent();
+                    return [2 /*return*/, response];
+            }
+        });
+    }); },
     charge: function (amount, source, stripeAccount) { return __awaiter(void 0, void 0, void 0, function () {
         var res;
         return __generator(this, function (_a) {

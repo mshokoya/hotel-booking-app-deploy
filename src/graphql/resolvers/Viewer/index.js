@@ -237,26 +237,30 @@ exports.viewerResolvers = {
         disconnectStripe: function (_root, _args, _a) {
             var db = _a.db, req = _a.req;
             return __awaiter(void 0, void 0, void 0, function () {
-                var viewer, updatedRes, error_3;
+                var viewer, wallet, updateRes, error_3;
                 return __generator(this, function (_b) {
                     switch (_b.label) {
                         case 0:
-                            _b.trys.push([0, 3, , 4]);
+                            _b.trys.push([0, 4, , 5]);
                             return [4 /*yield*/, utils_1.authorize(db, req)];
                         case 1:
                             viewer = _b.sent();
-                            if (!viewer) {
-                                throw new Error('viewer cannot be found');
+                            if (!viewer || !viewer.walletId) {
+                                throw new Error("viewer cannot be found or has not connected with Stripe");
                             }
-                            return [4 /*yield*/, db.users.findOneAndUpdate({ _id: viewer._id }, 
-                                // it is suppose to be null NOT undefined
-                                { $set: { walletId: undefined } }, { returnOriginal: false })];
+                            return [4 /*yield*/, api_1.Stripe.disconnect(viewer.walletId)];
                         case 2:
-                            updatedRes = _b.sent();
-                            if (!updatedRes.value) {
-                                throw new Error('viewer could not be updated');
+                            wallet = _b.sent();
+                            if (!wallet) {
+                                throw new Error("stripe disconnect error");
                             }
-                            viewer = updatedRes.value;
+                            return [4 /*yield*/, db.users.findOneAndUpdate({ _id: viewer._id }, { $set: { walletId: undefined } }, { returnOriginal: false })];
+                        case 3:
+                            updateRes = _b.sent();
+                            if (!updateRes.value) {
+                                throw new Error("viewer could not be updated");
+                            }
+                            viewer = updateRes.value;
                             return [2 /*return*/, {
                                     _id: viewer._id,
                                     token: viewer.token,
@@ -264,10 +268,10 @@ exports.viewerResolvers = {
                                     walletId: viewer.walletId,
                                     didRequest: true
                                 }];
-                        case 3:
+                        case 4:
                             error_3 = _b.sent();
-                            throw new Error("failed to disconnect with Stripe: " + error_3);
-                        case 4: return [2 /*return*/];
+                            throw new Error("Failed to disconnect with Stripe: " + error_3);
+                        case 5: return [2 /*return*/];
                     }
                 });
             });

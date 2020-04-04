@@ -50,28 +50,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var utils_1 = require("../../../lib/utils");
 var mongodb_1 = require("mongodb");
 var api_1 = require("../../../lib/api");
-var bookingsIndex = {
-    "2019": {
-        "00": {
-            "01": true,
-            "02": true
-        },
-        "04": {
-            "31": true
-        },
-        "05": {
-            "01": true
-        },
-        "06": {
-            "20": true
-        },
-        "11": {
-            "01": true,
-            "02": true,
-            "03": true
-        }
-    }
-};
+var millisecondsPerDay = 86400000;
 var resolveBookingsIndex = function (bookingsIndex, checkInDate, checkOutDate) {
     var dateCursor = new Date(checkInDate);
     var checkOut = new Date(checkOutDate);
@@ -102,7 +81,7 @@ exports.bookingResolvers = {
             var input = _a.input;
             var db = _b.db, req = _b.req;
             return __awaiter(void 0, void 0, void 0, function () {
-                var id, source, checkIn, checkOut, viewer, listing, checkInDate, checkOutDate, bookingsIndex_1, totalPrice, host, insertRes, insertedBooking, error_1;
+                var id, source, checkIn, checkOut, viewer, listing, today, checkInDate, checkOutDate, bookingsIndex, totalPrice, host, insertRes, insertedBooking, error_1;
                 return __generator(this, function (_c) {
                     switch (_c.label) {
                         case 0:
@@ -125,12 +104,19 @@ exports.bookingResolvers = {
                             if (listing.host === viewer._id) {
                                 throw new Error("viewer can't book own listing");
                             }
+                            today = new Date();
                             checkInDate = new Date(checkIn);
                             checkOutDate = new Date(checkOut);
+                            if (checkInDate.getTime() > today.getTime() + 90 * millisecondsPerDay) {
+                                throw new Error("check in date can't be more than 90 days from today");
+                            }
+                            if (checkOutDate.getTime() > today.getTime() + 90 * millisecondsPerDay) {
+                                throw new Error("check out date can't be more than 90 days from today");
+                            }
                             if (checkOutDate < checkInDate) {
                                 throw new Error("check out date can't be before check in date");
                             }
-                            bookingsIndex_1 = resolveBookingsIndex(listing.bookingsIndex, checkIn, checkOut);
+                            bookingsIndex = resolveBookingsIndex(listing.bookingsIndex, checkIn, checkOut);
                             totalPrice = listing.price *
                                 ((checkOutDate.getTime() - checkInDate.getTime()) / 86400000 + 1);
                             return [4 /*yield*/, db.users.findOne({
@@ -171,7 +157,7 @@ exports.bookingResolvers = {
                             return [4 /*yield*/, db.listings.updateOne({
                                     _id: listing._id
                                 }, {
-                                    $set: { bookingsIndex: bookingsIndex_1 },
+                                    $set: { bookingsIndex: bookingsIndex },
                                     $push: { bookings: insertedBooking._id }
                                 })];
                         case 8:
